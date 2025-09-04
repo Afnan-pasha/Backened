@@ -76,6 +76,16 @@ public class LoanController {
         }
     }
 
+    @PostMapping("/cleanup-duplicates")
+    public ResponseEntity<?> cleanupDuplicateApplications() {
+        try {
+            int deletedCount = loanApplicationService.cleanupDuplicateApplications();
+            return ResponseEntity.ok().body("Cleaned up " + deletedCount + " duplicate applications");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to cleanup duplicates: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/{loanId}/cancel")
     public ResponseEntity<?> cancelLoan(@PathVariable Long loanId) {
         boolean cancelled = loanApplicationService.cancelLoanApplication(loanId);

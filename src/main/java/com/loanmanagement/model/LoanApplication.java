@@ -72,6 +72,12 @@ public class LoanApplication {
     @OneToMany(mappedBy = "loanApplication", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Document> documents;
 
+    @OneToMany(mappedBy = "loanApplication", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Reference> references;
+
+    @OneToMany(mappedBy = "loanApplication", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ExistingLoan> existingLoans;
+
     public enum LoanStatus {
         PENDING, APPROVED, REJECTED, DISBURSED, CLOSED
     }

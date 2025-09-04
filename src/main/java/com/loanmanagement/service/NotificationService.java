@@ -40,23 +40,46 @@ public class NotificationService {
     }
 
     public boolean markAsRead(Long notificationId) {
-        Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
-        if (notificationOpt.isPresent()) {
-            Notification notification = notificationOpt.get();
-            notification.setIsRead(true);
-            notificationRepository.save(notification);
-            return true;
+        try {
+            Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
+            if (notificationOpt.isPresent()) {
+                Notification notification = notificationOpt.get();
+                notification.setIsRead(true);
+                notificationRepository.save(notification);
+
+                System.out.println("Marked notification " + notificationId + " as read");
+                return true;
+            }
+            System.out.println("Notification " + notificationId + " not found");
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error marking notification " + notificationId + " as read: " + e.getMessage());
+            return false;
         }
-        return false;
     }
 
     public boolean markAllAsRead() {
-        List<Notification> unreadNotifications = notificationRepository.findByIsReadOrderByCreatedAtDesc(false);
-        for (Notification notification : unreadNotifications) {
-            notification.setIsRead(true);
+        try {
+            List<Notification> unreadNotifications = notificationRepository.findByIsReadOrderByCreatedAtDesc(false);
+
+            if (unreadNotifications.isEmpty()) {
+                return true; // No notifications to mark as read
+            }
+
+            for (Notification notification : unreadNotifications) {
+                notification.setIsRead(true);
+            }
+
+            notificationRepository.saveAll(unreadNotifications);
+
+            // Log the operation for audit purposes
+            System.out.println("Marked " + unreadNotifications.size() + " notifications as read");
+
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error marking all notifications as read: " + e.getMessage());
+            return false;
         }
-        notificationRepository.saveAll(unreadNotifications);
-        return true;
     }
 
     public long getUnreadCount() {

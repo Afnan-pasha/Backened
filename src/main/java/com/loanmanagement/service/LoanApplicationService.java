@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -174,5 +175,40 @@ public class LoanApplicationService {
         loan.setTotalAmount(totalAmount);
     }
 
-    // These methods are no longer needed since Customer entity was removed
+    public int cleanupDuplicateApplications() {
+        List<LoanApplication> allLoans = loanApplicationRepository.findAllByOrderByApplicationDateDesc();
+
+        // Group loans by similar criteria
+        Map<String, List<LoanApplication>> groupedLoans = allLoans.stream()
+                .collect(Collectors.groupingBy(loan ->
+                        loan.getLoanType() + "-" +
+                                loan.getLoanAmount() + "-" +
+                                loan.getLoanTermMonths() + "-" +
+                                loan.getApplicationDate().toLocalDate()
+                ));
+
+        int deletedCount = 0;
+
+        // For each group, keep only the latest application
+        for (Map.Entry<String, List<LoanApplication>> entry : groupedLoans.entrySet()) {
+            List<LoanApplication> duplicates = entry.getValue();
+
+            if (duplicates.size() > 1) {
+                // Sort by application date (newest first)
+                duplicates.sort((a, b) -> b.getApplicationDate().compareTo(a.getApplicationDate()));
+
+                // Keep the first (newest) and delete the rest
+                for (int i = 1; i < duplicates.size(); i++) {
+                    LoanApplication toDelete = duplicates.get(i);
+                    // Only delete if status is PENDING to avoid deleting processed applications
+                    if (toDelete.getStatus() == LoanApplication.LoanStatus.PENDING) {
+                        loanApplicationRepository.delete(toDelete);
+                        deletedCount++;
+                    }
+                }
+            }
+        }
+
+        return deletedCount;
+    }
 }
